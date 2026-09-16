@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Picpress — Image Resizer</title>
+  <meta name="description" content="Resize images in your browser. No upload, no server, no tracking.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cream: #faf6f0;
+      --cream-deep: #f3ede3;
+      --ink: #2b2520;
+      --ink-soft: #5a5048;
+      --coral: #e07856;
+      --coral-soft: #ec9d82;
+      --teal: #4a9b8e;
+      --lavender: #9b8ec4;
+      --radius: 14px;
+      --shadow: 0 2px 12px rgba(43, 37, 32, 0.08);
+      --shadow-lift: 0 6px 24px rgba(43, 37, 32, 0.12);
+      --serif: 'Fraunces', Georgia, serif;
+      --sans: 'Inter', -apple-system, system-ui, sans-serif;
+    }
+
+    [data-theme="dark"] {
+      --cream: #1a1612;
+      --cream-deep: #221d18;
+      --ink: #e8e0d6;
+      --ink-soft: #a09388;
+      --coral: #ec9d82;
+      --coral-soft: #f0b098;
+      --teal: #7bbaad;
+      --lavender: #bbaedb;
+      --shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+      --shadow-lift: 0 6px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      color: var(--ink);
+      background: var(--cream);
+      line-height: 1.65;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    .bg-grain {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .bg-blob {
+      position: fixed; border-radius: 50%; filter: blur(80px);
+      opacity: 0.14; z-index: 0; pointer-events: none;
+      animation: drift 20s ease-in-out infinite alternate;
+    }
+    .blob-1 { width: 380px; height: 380px; background: var(--coral); top: -100px; right: -80px; }
+    .blob-2 { width: 320px; height: 320px; background: var(--teal); bottom: 5%; left: -100px; animation-delay: -7s; }
+    @keyframes drift {
+      0%   { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(30px, -20px) scale(1.08); }
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 60px 24px 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .logo {
+      font-family: var(--serif);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--coral);
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(2.4rem, 6vw, 3.4rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+    .subtitle {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.15rem;
+      color: var(--ink-soft);
+      max-width: 440px;
+      margin: 0 auto;
+    }
+
+    /* ── controls ── */
+    .controls {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      margin-bottom: 32px;
+      padding: 24px 28px;
+      background: var(--cream-deep);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .control-group label {
+      font-size: 0.78rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--ink-soft);
+    }
+    .control-group input[type="number"] {
+      width: 100px;
+      padding: 8px 12px;
+      border: 1px solid rgba(43,37,32,0.15);
+      border-radius: 8px;
+      font-family: var(--sans);
+      font-size: 1rem;
+      color: var(--ink);
+      background: var(--cream);
+    }
+    .control-group input[type="range"] {
+      width: 160px;
+      accent-color: var(--coral);
+    }
+    .quality-val {
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--coral);
+      min-width: 36px;
+    }
+    .theme-btn {
+      margin-left: auto;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 4px 8px;
+      opacity: 0.6;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .theme-btn:hover { opacity: 1; transform: scale(1.15); }
+
+    /* ── drop zone ── */
+    .drop-zone {
+      border: 2px dashed var(--coral-soft);
+      border-radius: var(--radius);
+      padding: 60px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--coral);
+      background: var(--cream-deep);
+    }
+    .drop-zone .drop-icon {
+      font-size: 2.4rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .drop-zone .drop-text {
+      font-family: var(--serif);
+      font-size: 1.15rem;
+      color: var(--ink);
+    }
+    .drop-zone .drop-hint {
+      font-size: 0.85rem;
+      color: var(--ink-soft);
+      margin-top: 6px;
+    }
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* ── results ── */
+    .results {
+      margin-top: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .result-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      background: var(--cream-deep);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      animation: slideIn 0.3s ease forwards;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .result-thumb {
+      width: 72px;
+      height: 72px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
+      box-shadow: var(--shadow);
+    }
+    .result-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .result-name {
+      font-family: var(--sans);
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .result-sizes {
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+      margin-top: 4px;
+    }
+    .result-sizes .before { text-decoration: line-through; opacity: 0.5; }
+    .result-sizes .arrow { margin: 0 6px; }
+    .result-sizes .after { color: var(--teal); font-weight: 500; }
+    .result-sizes .saving { color: var(--coral); font-weight: 600; margin-left: 8px; }
+    .result-download {
+      font-family: var(--serif);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--cream);
+      background: var(--coral);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .result-download:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lift);
+    }
+
+    .download-all {
+      text-align: center;
+      margin-top: 24px;
+    }
+    .download-all-btn {
+      font-family: var(--serif);
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--cream);
+      background: var(--ink);
+      border: none;
+      padding: 14px 36px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .download-all-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lift);
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 60px;
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+      opacity: 0.6;
+    }
+    footer a {
+      color: var(--coral);
+      text-decoration: none;
+    }
+
+    @media (max-width: 560px) {
+      .controls { flex-direction: column; align-items: stretch; }
+      .theme-btn { margin-left: 0; align-self: flex-end; }
+      .result-card { flex-wrap: wrap; }
+      .result-download { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grain"></div>
+  <div class="bg-blob blob-1"></div>
+  <div class="bg-blob blob-2"></div>
+
+  <div class="container">
+    <header>
+      <div class="logo">picpress</div>
+      <h1>Image Resizer</h1>
+      <p class="subtitle">Drop your photos. They resize in your browser and never leave your device.</p>
+    </header>
+
+    <div class="controls">
+      <div class="control-group">
+        <label for="max-size">Max dimension (px)</label>
+        <input type="number" id="max-size" value="1920" min="100" max="8000" step="100">
+      </div>
+      <div class="control-group">
+        <label for="quality">JPEG quality</label>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <input type="range" id="quality" min="30" max="100" value="85" step="5">
+          <span class="quality-val" id="quality-val">85%</span>
+        </div>
+      </div>
+      <button class="theme-btn" id="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+    </div>
+
+    <div class="drop-zone" id="drop-zone">
+      <span class="drop-icon">📸</span>
+      <p class="drop-text">Drop images here or click to browse</p>
+      <p class="drop-hint">JPG, PNG, WebP — multiple files welcome</p>
+      <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" multiple>
+    </div>
+
+    <div class="results" id="results"></div>
+
+    <div class="download-all" id="download-all" style="display:none;">
+      <button class="download-all-btn" id="download-all-btn">Download all</button>
+    </div>
+
+    <footer>
+      A Nemini tool · runs entirely in your browser · no upload, no tracking
+    </footer>
+  </div>
+
+  <script>
+    // ── theme ──
+    (function () {
+      var saved = localStorage.getItem('resizer-theme');
+      var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var isDark = saved ? saved === 'dark' : prefersDark;
+      if (isDark) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('theme-toggle').textContent = '☀️';
+      }
+      document.getElementById('theme-toggle').addEventListener('click', function () {
+        var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (dark) {
+          document.documentElement.removeAttribute('data-theme');
+          localStorage.setItem('resizer-theme', 'light');
+          this.textContent = '🌙';
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('resizer-theme', 'dark');
+          this.textContent = '☀️';
+        }
+      });
+    })();
+
+    // ── quality slider ──
+    var qualityInput = document.getElementById('quality');
+    var qualityVal = document.getElementById('quality-val');
+    qualityInput.addEventListener('input', function () {
+      qualityVal.textContent = this.value + '%';
+    });
+
+    // ── file handling ──
+    var dropZone = document.getElementById('drop-zone');
+    var fileInput = document.getElementById('file-input');
+    var results = document.getElementById('results');
+    var downloadAllDiv = document.getElementById('download-all');
+    var downloadAllBtn = document.getElementById('download-all-btn');
+    var processedFiles = [];
+
+    dropZone.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      this.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', function () {
+      this.classList.remove('dragover');
+    });
+    dropZone.addEventListener('drop', function (e) {
+      e.preventDefault();
+      this.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+    fileInput.addEventListener('change', function () {
+      handleFiles(this.files);
+    });
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(0) + ' KB';
+      return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function handleFiles(files) {
+      Array.from(files).forEach(function (file) {
+        if (!file.type.match(/^image\/(jpeg|png|webp)$/)) return;
+        processFile(file);
+      });
+    }
+
+    function processFile(file) {
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          var maxSize = parseInt(document.getElementById('max-size').value, 10) || 1920;
+          var quality = parseInt(document.getElementById('quality').value, 10) / 100;
+
+          var origW = img.width, origH = img.height;
+          var scale = Math.min(1, maxSize / Math.max(origW, origH));
+          var newW = Math.round(origW * scale);
+          var newH = Math.round(origH * scale);
+
+          var canvas = document.createElement('canvas');
+          canvas.width = newW;
+          canvas.height = newH;
+          var ctx = canvas.getContext('2d');
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, newW, newH);
+
+          canvas.toBlob(function (blob) {
+            if (!blob) return;
+            var url = URL.createObjectURL(blob);
+            var origSize = file.size;
+            var newSize = blob.size;
+            var saving = origSize > 0 ? Math.round((1 - newSize / origSize) * 100) : 0;
+            var baseName = file.name.replace(/\.[^.]+$/, '');
+
+            var card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML =
+              '<img class="result-thumb" src="' + url + '" alt="">' +
+              '<div class="result-info">' +
+                '<div class="result-name">' + file.name + '</div>' +
+                '<div class="result-sizes">' +
+                  '<span class="before">' + formatBytes(origSize) + '</span>' +
+                  '<span class="arrow">→</span>' +
+                  '<span class="after">' + formatBytes(newSize) + '</span>' +
+                  (saving > 0 ? '<span class="saving">−' + saving + '%</span>' : '') +
+                  ' · ' + newW + '×' + newH +
+                '</div>' +
+              '</div>' +
+              '<button class="result-download">Download</button>';
+
+            var dlBtn = card.querySelector('.result-download');
+            dlBtn.addEventListener('click', function () {
+              downloadBlob(blob, baseName + '_resized.jpg');
+            });
+
+            results.appendChild(card);
+            processedFiles.push({ blob: blob, name: baseName + '_resized.jpg' });
+
+            if (processedFiles.length > 1) {
+              downloadAllDiv.style.display = 'block';
+            }
+          }, 'image/jpeg', quality);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function downloadBlob(blob, name) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 100);
+    }
+
+    downloadAllBtn.addEventListener('click', function () {
+      processedFiles.forEach(function (f, i) {
+        setTimeout(function () { downloadBlob(f.blob, f.name); }, i * 200);
+      });
+    });
+  </script>
+</body>
+</html>
