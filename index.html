@@ -304,6 +304,12 @@
     .result-sizes .arrow { margin: 0 6px; }
     .result-sizes .after { color: var(--teal); font-weight: 500; }
     .result-sizes .saving { color: var(--coral); font-weight: 600; margin-left: 8px; }
+    .result-card-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
     .result-download {
       font-family: var(--serif);
       font-size: 0.9rem;
@@ -314,10 +320,43 @@
       padding: 10px 20px;
       border-radius: 10px;
       cursor: pointer;
-      flex-shrink: 0;
       transition: transform 0.15s, box-shadow 0.15s;
     }
     .result-download:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lift);
+    }
+    .result-remove {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.1rem;
+      color: var(--ink-soft);
+      opacity: 0.5;
+      padding: 8px 10px;
+      border-radius: 8px;
+      transition: opacity 0.2s, background 0.2s;
+    }
+    .result-remove:hover {
+      opacity: 1;
+      background: rgba(43,37,32,0.08);
+    }
+    .upload-btn {
+      display: inline-block;
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--cream);
+      background: var(--coral);
+      border: none;
+      padding: 12px 28px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      margin-top: 14px;
+      box-shadow: var(--shadow);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .upload-btn:hover {
       transform: translateY(-2px);
       box-shadow: var(--shadow-lift);
     }
@@ -360,7 +399,8 @@
       .controls { flex-direction: column; align-items: stretch; }
       .theme-btn { margin-left: 0; align-self: flex-end; }
       .result-card { flex-wrap: wrap; }
-      .result-download { width: 100%; text-align: center; }
+      .result-card-actions { width: 100%; }
+      .result-download { flex: 1; text-align: center; }
     }
   </style>
 </head>
@@ -430,6 +470,7 @@
       <p class="wortel-status" id="wortel-status">Wortel is hungry!</p>
       <p class="drop-text">Feed Wortel your images — or click to browse</p>
       <p class="drop-hint">JPG, PNG, WebP — multiple files welcome</p>
+      <button class="upload-btn" id="upload-btn" type="button">Upload images</button>
       <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" multiple>
     </div>
 
@@ -528,6 +569,11 @@
     });
     fileInput.addEventListener('change', function () {
       handleFiles(this.files);
+      this.value = '';
+    });
+    document.getElementById('upload-btn').addEventListener('click', function (e) {
+      e.stopPropagation();
+      fileInput.click();
     });
 
     function formatBytes(bytes) {
@@ -590,11 +636,32 @@
                   ' · ' + newW + '×' + newH +
                 '</div>' +
               '</div>' +
-              '<button class="result-download">Download</button>';
+              '<div class="result-card-actions">' +
+                '<button class="result-download">Download</button>' +
+                '<button class="result-remove" title="Remove" aria-label="Remove">✕</button>' +
+              '</div>';
 
             var dlBtn = card.querySelector('.result-download');
             dlBtn.addEventListener('click', function () {
               downloadBlob(blob, baseName + '_resized.jpg');
+            });
+
+            var removeBtn = card.querySelector('.result-remove');
+            var fileIndex = processedFiles.length;
+            removeBtn.addEventListener('click', function () {
+              card.style.opacity = '0';
+              card.style.transform = 'translateX(20px)';
+              card.style.transition = 'opacity 0.25s, transform 0.25s';
+              setTimeout(function () {
+                card.remove();
+                processedFiles = processedFiles.filter(function (f) { return f.blob !== blob; });
+                if (processedFiles.length <= 1) {
+                  downloadAllDiv.style.display = 'none';
+                }
+                if (processedFiles.length === 0) {
+                  results.innerHTML = '';
+                }
+              }, 250);
             });
 
             results.appendChild(card);
