@@ -138,16 +138,41 @@
       color: var(--ink);
       background: var(--cream);
     }
-    .control-group input[type="range"] {
-      width: 160px;
-      accent-color: var(--coral);
-    }
-    .quality-val {
-      font-family: var(--serif);
+    .control-group select {
+      padding: 8px 12px;
+      border: 1px solid rgba(43,37,32,0.15);
+      border-radius: 8px;
+      font-family: var(--sans);
       font-size: 1rem;
-      font-weight: 600;
-      color: var(--coral);
-      min-width: 36px;
+      color: var(--ink);
+      background: var(--cream);
+      cursor: pointer;
+    }
+    .control-group input[type="number"]:focus,
+    .control-group select:focus {
+      outline: 2px solid var(--coral);
+      outline-offset: -1px;
+      border-color: transparent;
+    }
+    .size-custom-wrap {
+      display: none;
+      align-items: center;
+      gap: 6px;
+    }
+    .size-custom-wrap.active { display: flex; }
+    .size-custom-wrap input {
+      width: 80px;
+      padding: 8px 12px;
+      border: 1px solid rgba(43,37,32,0.15);
+      border-radius: 8px;
+      font-family: var(--sans);
+      font-size: 1rem;
+      color: var(--ink);
+      background: var(--cream);
+    }
+    .size-custom-wrap span {
+      font-size: 0.9rem;
+      color: var(--ink-soft);
     }
     .theme-btn {
       margin-left: auto;
@@ -252,6 +277,49 @@
       min-height: 1.2em;
       margin-bottom: 6px;
     }
+    .upload-btn {
+      display: inline-block;
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--cream);
+      background: var(--coral);
+      border: none;
+      padding: 12px 28px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      margin-top: 14px;
+      box-shadow: var(--shadow);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .upload-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lift);
+    }
+
+    /* ── summary bar ── */
+    .summary-bar {
+      display: none;
+      margin-top: 20px;
+      padding: 16px 24px;
+      background: var(--cream-deep);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--ink-soft);
+    }
+    .summary-bar.visible { display: block; }
+    .summary-numbers {
+      font-family: var(--serif);
+      font-size: 1.1rem;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+    .summary-numbers .total-before { text-decoration: line-through; opacity: 0.5; }
+    .summary-numbers .arrow { margin: 0 8px; color: var(--ink-soft); }
+    .summary-numbers .total-after { color: var(--teal); font-weight: 600; }
+    .summary-numbers .total-saving { color: var(--coral); font-weight: 600; margin-left: 8px; }
 
     /* ── results ── */
     .results {
@@ -304,6 +372,12 @@
     .result-sizes .arrow { margin: 0 6px; }
     .result-sizes .after { color: var(--teal); font-weight: 500; }
     .result-sizes .saving { color: var(--coral); font-weight: 600; margin-left: 8px; }
+    .result-meta {
+      font-size: 0.78rem;
+      color: var(--ink-soft);
+      opacity: 0.7;
+      margin-top: 3px;
+    }
     .result-card-actions {
       display: flex;
       gap: 8px;
@@ -341,36 +415,18 @@
       opacity: 1;
       background: rgba(43,37,32,0.08);
     }
-    .upload-btn {
-      display: inline-block;
-      font-family: var(--serif);
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--cream);
-      background: var(--coral);
-      border: none;
-      padding: 12px 28px;
-      border-radius: var(--radius);
-      cursor: pointer;
-      margin-top: 14px;
-      box-shadow: var(--shadow);
-      transition: transform 0.15s, box-shadow 0.15s;
-    }
-    .upload-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-lift);
-    }
 
-    .download-all {
+    .action-row {
       text-align: center;
       margin-top: 24px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
     }
-    .download-all-btn {
+    .download-all-btn, .clear-all-btn {
       font-family: var(--serif);
       font-size: 1.1rem;
       font-weight: 600;
-      color: var(--cream);
-      background: var(--ink);
       border: none;
       padding: 14px 36px;
       border-radius: var(--radius);
@@ -378,10 +434,23 @@
       box-shadow: var(--shadow);
       transition: transform 0.15s, box-shadow 0.15s;
     }
-    .download-all-btn:hover {
+    .download-all-btn {
+      color: var(--cream);
+      background: var(--ink);
+    }
+    .clear-all-btn {
+      color: var(--ink);
+      background: transparent;
+      box-shadow: none;
+      border: 1px solid rgba(43,37,32,0.2);
+    }
+    .download-all-btn:hover, .clear-all-btn:hover {
       transform: translateY(-2px);
       box-shadow: var(--shadow-lift);
     }
+    .clear-all-btn:hover { border-color: var(--coral); color: var(--coral); }
+
+    .action-row.hidden { display: none; }
 
     footer {
       text-align: center;
@@ -422,10 +491,18 @@
         <input type="number" id="max-size" value="1920" min="100" max="8000" step="10">
       </div>
       <div class="control-group">
-        <label for="quality">JPEG quality</label>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <input type="range" id="quality" min="30" max="100" value="85" step="5">
-          <span class="quality-val" id="quality-val">85%</span>
+        <label for="target-size">Target size</label>
+        <select id="target-size">
+          <option value="200">Small (~200 KB)</option>
+          <option value="400" selected>Medium (~400 KB)</option>
+          <option value="800">Large (~800 KB)</option>
+          <option value="0">Custom</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <div class="size-custom-wrap" id="size-custom-wrap">
+          <input type="number" id="custom-size" value="400" min="50" max="5000" step="50">
+          <span>KB</span>
         </div>
       </div>
       <button class="theme-btn" id="theme-toggle" aria-label="Toggle dark mode">🌙</button>
@@ -474,10 +551,16 @@
       <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" multiple>
     </div>
 
+    <div class="summary-bar" id="summary-bar">
+      <div class="summary-numbers" id="summary-numbers"></div>
+      <div id="summary-detail"></div>
+    </div>
+
     <div class="results" id="results"></div>
 
-    <div class="download-all" id="download-all" style="display:none;">
+    <div class="action-row hidden" id="action-row">
       <button class="download-all-btn" id="download-all-btn">Download all</button>
+      <button class="clear-all-btn" id="clear-all-btn">Clear all</button>
     </div>
 
     <footer>
@@ -509,12 +592,18 @@
       });
     })();
 
-    // ── quality slider ──
-    var qualityInput = document.getElementById('quality');
-    var qualityVal = document.getElementById('quality-val');
-    qualityInput.addEventListener('input', function () {
-      qualityVal.textContent = this.value + '%';
+    // ── target size control ──
+    var targetSelect = document.getElementById('target-size');
+    var customWrap = document.getElementById('size-custom-wrap');
+    var customInput = document.getElementById('custom-size');
+    targetSelect.addEventListener('change', function () {
+      customWrap.classList.toggle('active', this.value === '0');
     });
+
+    function getTargetKB() {
+      if (targetSelect.value === '0') return parseInt(customInput.value, 10) || 400;
+      return parseInt(targetSelect.value, 10);
+    }
 
     // ── wortel state ──
     var wortel = document.getElementById('wortel');
@@ -551,8 +640,12 @@
     var dropZone = document.getElementById('drop-zone');
     var fileInput = document.getElementById('file-input');
     var results = document.getElementById('results');
-    var downloadAllDiv = document.getElementById('download-all');
+    var summaryBar = document.getElementById('summary-bar');
+    var summaryNumbers = document.getElementById('summary-numbers');
+    var summaryDetail = document.getElementById('summary-detail');
+    var actionRow = document.getElementById('action-row');
     var downloadAllBtn = document.getElementById('download-all-btn');
+    var clearAllBtn = document.getElementById('clear-all-btn');
     var processedFiles = [];
 
     dropZone.addEventListener('dragover', function (e) {
@@ -593,13 +686,63 @@
       valid.forEach(function (file) { processFile(file); });
     }
 
+    // ── binary search compression ──
+    // Find the highest JPEG quality (0.30–0.95) that produces a blob
+    // under targetBytes. Fast path: try 0.85 first, use it if it fits.
+    function compressToTarget(canvas, targetBytes, callback) {
+      var MIN_Q = 0.30, MAX_Q = 0.95, FAST_Q = 0.85;
+
+      canvas.toBlob(function (blob) {
+        if (!blob) { callback(null, 0); return; }
+        if (blob.size <= targetBytes) {
+          // Fast path — 85% fit, done
+          callback(blob, FAST_Q);
+          return;
+        }
+
+        // Binary search between MIN_Q and FAST_Q to find the best quality
+        // that stays under target
+        var lo = MIN_Q, hi = FAST_Q, bestBlob = null, bestQ = MIN_Q;
+
+        function searchStep() {
+          if (lo > hi - 0.02) {
+            // Converged — use the best we found (or last attempt at lo)
+            if (bestBlob) {
+              callback(bestBlob, bestQ);
+            } else {
+              // Even minimum quality is too big — return the smallest we can
+              canvas.toBlob(function (finalBlob) {
+                callback(finalBlob || blob, MIN_Q);
+              }, 'image/jpeg', MIN_Q);
+            }
+            return;
+          }
+
+          var mid = (lo + hi) / 2;
+          canvas.toBlob(function (testBlob) {
+            if (testBlob && testBlob.size <= targetBytes) {
+              bestBlob = testBlob;
+              bestQ = mid;
+              lo = mid + 0.01; // try higher
+            } else {
+              hi = mid - 0.01; // try lower
+            }
+            searchStep();
+          }, 'image/jpeg', mid);
+        }
+
+        searchStep();
+      }, 'image/jpeg', FAST_Q);
+    }
+
     function processFile(file) {
       var reader = new FileReader();
       reader.onload = function (e) {
         var img = new Image();
         img.onload = function () {
           var maxSize = parseInt(document.getElementById('max-size').value, 10) || 1920;
-          var quality = parseInt(document.getElementById('quality').value, 10) / 100;
+          var targetKB = getTargetKB();
+          var targetBytes = targetKB * 1024;
 
           var origW = img.width, origH = img.height;
           var scale = Math.min(1, maxSize / Math.max(origW, origH));
@@ -614,13 +757,14 @@
           ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, newW, newH);
 
-          canvas.toBlob(function (blob) {
+          compressToTarget(canvas, targetBytes, function (blob, qualityUsed) {
             if (!blob) return;
             var url = URL.createObjectURL(blob);
             var origSize = file.size;
             var newSize = blob.size;
             var saving = origSize > 0 ? Math.round((1 - newSize / origSize) * 100) : 0;
             var baseName = file.name.replace(/\.[^.]+$/, '');
+            var qPct = Math.round(qualityUsed * 100);
 
             var card = document.createElement('div');
             card.className = 'result-card';
@@ -633,8 +777,8 @@
                   '<span class="arrow">→</span>' +
                   '<span class="after">' + formatBytes(newSize) + '</span>' +
                   (saving > 0 ? '<span class="saving">−' + saving + '%</span>' : '') +
-                  ' · ' + newW + '×' + newH +
                 '</div>' +
+                '<div class="result-meta">' + newW + '×' + newH + ' · JPEG ' + qPct + '%</div>' +
               '</div>' +
               '<div class="result-card-actions">' +
                 '<button class="result-download">Download</button>' +
@@ -647,7 +791,6 @@
             });
 
             var removeBtn = card.querySelector('.result-remove');
-            var fileIndex = processedFiles.length;
             removeBtn.addEventListener('click', function () {
               card.style.opacity = '0';
               card.style.transform = 'translateX(20px)';
@@ -655,21 +798,20 @@
               setTimeout(function () {
                 card.remove();
                 processedFiles = processedFiles.filter(function (f) { return f.blob !== blob; });
-                if (processedFiles.length <= 1) {
-                  downloadAllDiv.style.display = 'none';
-                }
-                if (processedFiles.length === 0) {
-                  results.innerHTML = '';
-                }
+                updateActions();
               }, 250);
             });
 
             results.appendChild(card);
-            processedFiles.push({ blob: blob, name: baseName + '_resized.jpg' });
-
-            if (processedFiles.length > 1) {
-              downloadAllDiv.style.display = 'block';
-            }
+            processedFiles.push({
+              blob: blob,
+              name: baseName + '_resized.jpg',
+              origSize: origSize,
+              newSize: newSize,
+              w: newW,
+              h: newH,
+              quality: qPct
+            });
 
             pendingFiles--;
             if (pendingFiles <= 0) {
@@ -677,11 +819,51 @@
               growWortel();
               setTimeout(function () { setWortelState('idle'); }, 2500);
             }
-          }, 'image/jpeg', quality);
+            updateActions();
+          });
         };
         img.src = e.target.result;
       };
       reader.readAsDataURL(file);
+    }
+
+    function updateActions() {
+      var count = processedFiles.length;
+      if (count > 0) {
+        actionRow.classList.remove('hidden');
+        if (count > 1) {
+          downloadAllBtn.style.display = '';
+        } else {
+          downloadAllBtn.style.display = 'none';
+        }
+        updateSummary();
+      } else {
+        actionRow.classList.add('hidden');
+        summaryBar.classList.remove('visible');
+      }
+    }
+
+    function updateSummary() {
+      var count = processedFiles.length;
+      if (count === 0) {
+        summaryBar.classList.remove('visible');
+        return;
+      }
+
+      var totalBefore = processedFiles.reduce(function (s, f) { return s + f.origSize; }, 0);
+      var totalAfter = processedFiles.reduce(function (s, f) { return s + f.newSize; }, 0);
+      var totalSaving = totalBefore > 0 ? Math.round((1 - totalAfter / totalBefore) * 100) : 0;
+
+      summaryNumbers.innerHTML =
+        '<span class="total-before">' + formatBytes(totalBefore) + '</span>' +
+        '<span class="arrow">→</span>' +
+        '<span class="total-after">' + formatBytes(totalAfter) + '</span>' +
+        (totalSaving > 0 ? '<span class="total-saving">−' + totalSaving + '%</span>' : '');
+
+      summaryDetail.textContent = count + ' image' + (count > 1 ? 's' : '') +
+        ' · target ≤ ' + getTargetKB() + ' KB each';
+
+      summaryBar.classList.add('visible');
     }
 
     function downloadBlob(blob, name) {
@@ -699,6 +881,16 @@
       processedFiles.forEach(function (f, i) {
         setTimeout(function () { downloadBlob(f.blob, f.name); }, i * 200);
       });
+    });
+
+    clearAllBtn.addEventListener('click', function () {
+      processedFiles = [];
+      results.innerHTML = '';
+      updateActions();
+      // Reset Wortel to normal size
+      totalFed = 0;
+      wortelWrap.style.width = '120px';
+      wortelWrap.style.height = '96px';
     });
   </script>
 </body>
