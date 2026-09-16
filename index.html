@@ -197,6 +197,47 @@
       cursor: pointer;
     }
 
+    /* ── wortel ── */
+    .wortel {
+      width: 120px;
+      height: 96px;
+      margin: 0 auto 8px;
+      animation: wortel-breathe 3s ease-in-out infinite;
+      transform-origin: bottom center;
+      transition: transform 0.3s ease;
+    }
+    @keyframes wortel-breathe {
+      0%, 100% { transform: scale(1) translateY(0); }
+      50% { transform: scale(1.03) translateY(-2px); }
+    }
+    .wortel.eating {
+      animation: wortel-chomp 0.35s ease-in-out infinite;
+    }
+    @keyframes wortel-chomp {
+      0%, 100% { transform: scale(1) rotate(0); }
+      25% { transform: scale(1.06) rotate(-1.5deg); }
+      75% { transform: scale(1.06) rotate(1.5deg); }
+    }
+    .wortel.full {
+      animation: wortel-satisfied 0.6s ease forwards;
+    }
+    @keyframes wortel-satisfied {
+      0% { transform: scale(1) rotate(0); }
+      40% { transform: scale(1.08) rotate(-2deg); }
+      100% { transform: scale(1.04) rotate(-4deg); }
+    }
+    .wortel .wortel-eyes-closed { display: none; }
+    .wortel.full .wortel-eyes-open { display: none; }
+    .wortel.full .wortel-eyes-closed { display: block; }
+    .wortel-status {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 0.9rem;
+      color: var(--coral);
+      min-height: 1.2em;
+      margin-bottom: 6px;
+    }
+
     /* ── results ── */
     .results {
       margin-top: 32px;
@@ -323,7 +364,7 @@
     <div class="controls">
       <div class="control-group">
         <label for="max-size">Max dimension (px)</label>
-        <input type="number" id="max-size" value="1920" min="100" max="8000" step="100">
+        <input type="number" id="max-size" value="1920" min="100" max="8000" step="10">
       </div>
       <div class="control-group">
         <label for="quality">JPEG quality</label>
@@ -336,8 +377,33 @@
     </div>
 
     <div class="drop-zone" id="drop-zone">
-      <span class="drop-icon">📸</span>
-      <p class="drop-text">Drop images here or click to browse</p>
+      <svg class="wortel" id="wortel" viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="58" cy="42" rx="14" ry="16" fill="#8B6F47"/>
+        <ellipse cx="142" cy="42" rx="14" ry="16" fill="#8B6F47"/>
+        <ellipse cx="58" cy="44" rx="8" ry="10" fill="#6B5538"/>
+        <ellipse cx="142" cy="44" rx="8" ry="10" fill="#6B5538"/>
+        <ellipse cx="100" cy="100" rx="72" ry="52" fill="#8B6F47"/>
+        <ellipse cx="100" cy="110" rx="42" ry="32" fill="#9B8057"/>
+        <g class="wortel-eyes-open">
+          <circle cx="75" cy="72" r="5.5" fill="#2b2520"/>
+          <circle cx="77" cy="70" r="1.8" fill="#fff"/>
+          <circle cx="125" cy="72" r="5.5" fill="#2b2520"/>
+          <circle cx="127" cy="70" r="1.8" fill="#fff"/>
+        </g>
+        <g class="wortel-eyes-closed">
+          <path d="M68 72 Q75 78 82 72" stroke="#2b2520" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <path d="M118 72 Q125 78 132 72" stroke="#2b2520" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </g>
+        <ellipse cx="100" cy="95" rx="9" ry="7" fill="#5a3e2b"/>
+        <circle cx="96" cy="95" r="1.5" fill="#3a2818"/>
+        <circle cx="104" cy="95" r="1.5" fill="#3a2818"/>
+        <ellipse cx="62" cy="105" rx="14" ry="11" fill="#a68b68" opacity="0.5"/>
+        <ellipse cx="138" cy="105" rx="14" ry="11" fill="#a68b68" opacity="0.5"/>
+        <ellipse cx="78" cy="148" rx="18" ry="8" fill="#6B5538"/>
+        <ellipse cx="122" cy="148" rx="18" ry="8" fill="#6B5538"/>
+      </svg>
+      <p class="wortel-status" id="wortel-status">Wortel is hungry!</p>
+      <p class="drop-text">Feed Wortel your images — or click to browse</p>
       <p class="drop-hint">JPG, PNG, WebP — multiple files welcome</p>
       <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" multiple>
     </div>
@@ -349,7 +415,7 @@
     </div>
 
     <footer>
-      A Nemini tool · runs entirely in your browser · no upload, no tracking
+      Created with <a href="https://nemini.ai" target="_blank" rel="noopener">Nemini</a> · runs entirely in your browser · no upload, no tracking
     </footer>
   </div>
 
@@ -384,6 +450,23 @@
       qualityVal.textContent = this.value + '%';
     });
 
+    // ── wortel state ──
+    var wortel = document.getElementById('wortel');
+    var wortelStatus = document.getElementById('wortel-status');
+    var pendingFiles = 0;
+    function setWortelState(state) {
+      wortel.classList.remove('eating', 'full');
+      if (state === 'eating') {
+        wortel.classList.add('eating');
+        wortelStatus.textContent = 'Nom nom nom...';
+      } else if (state === 'full') {
+        wortel.classList.add('full');
+        wortelStatus.textContent = '*burp*';
+      } else {
+        wortelStatus.textContent = 'Wortel is hungry!';
+      }
+    }
+
     // ── file handling ──
     var dropZone = document.getElementById('drop-zone');
     var fileInput = document.getElementById('file-input');
@@ -415,10 +498,13 @@
     }
 
     function handleFiles(files) {
-      Array.from(files).forEach(function (file) {
-        if (!file.type.match(/^image\/(jpeg|png|webp)$/)) return;
-        processFile(file);
+      var valid = Array.from(files).filter(function (file) {
+        return file.type.match(/^image\/(jpeg|png|webp)$/);
       });
+      if (valid.length === 0) return;
+      pendingFiles += valid.length;
+      setWortelState('eating');
+      valid.forEach(function (file) { processFile(file); });
     }
 
     function processFile(file) {
@@ -476,6 +562,12 @@
 
             if (processedFiles.length > 1) {
               downloadAllDiv.style.display = 'block';
+            }
+
+            pendingFiles--;
+            if (pendingFiles <= 0) {
+              setWortelState('full');
+              setTimeout(function () { setWortelState('idle'); }, 2500);
             }
           }, 'image/jpeg', quality);
         };
