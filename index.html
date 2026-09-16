@@ -559,7 +559,7 @@
     <div class="results" id="results"></div>
 
     <div class="action-row hidden" id="action-row">
-      <button class="download-all-btn" id="download-all-btn">Download all</button>
+      <button class="download-all-btn" id="download-all-btn">Download all (.zip)</button>
       <button class="clear-all-btn" id="clear-all-btn">Clear all</button>
     </div>
 
@@ -568,6 +568,7 @@
     </footer>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script>
     // ── theme ──
     (function () {
@@ -831,11 +832,7 @@
       var count = processedFiles.length;
       if (count > 0) {
         actionRow.classList.remove('hidden');
-        if (count > 1) {
-          downloadAllBtn.style.display = '';
-        } else {
-          downloadAllBtn.style.display = 'none';
-        }
+        downloadAllBtn.style.display = '';
         updateSummary();
       } else {
         actionRow.classList.add('hidden');
@@ -878,8 +875,31 @@
     }
 
     downloadAllBtn.addEventListener('click', function () {
-      processedFiles.forEach(function (f, i) {
-        setTimeout(function () { downloadBlob(f.blob, f.name); }, i * 200);
+      if (processedFiles.length === 0) return;
+      downloadAllBtn.disabled = true;
+      downloadAllBtn.textContent = 'Zipping...';
+
+      var zip = new JSZip();
+      var usedNames = {};
+      processedFiles.forEach(function (f) {
+        var name = f.name;
+        if (usedNames[name]) {
+          usedNames[name]++;
+          var parts = name.split(/(\.[^.]+$)/);
+          name = parts[0] + '_' + usedNames[name] + (parts[1] || '');
+        } else {
+          usedNames[name] = 1;
+        }
+        zip.file(name, f.blob);
+      });
+
+      zip.generateAsync({ type: 'blob', compression: 'DEFLATE' }).then(function (blob) {
+        downloadBlob(blob, 'picpress_resized.zip');
+        downloadAllBtn.disabled = false;
+        downloadAllBtn.textContent = 'Download all (.zip)';
+      }).catch(function () {
+        downloadAllBtn.disabled = false;
+        downloadAllBtn.textContent = 'Download all (.zip)';
       });
     });
 
